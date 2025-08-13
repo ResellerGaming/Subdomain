@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Subdomain Creator – Reseller Gaming Programmer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>body{font-family:'Inter',sans-serif}</style>
+</head>
+
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <!-- Card -->
+  <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5">
+    <!-- Header -->
+    <div class="flex items-center space-x-3">
+      <i data-feather="cloud-drizzle" class="w-8 h-8 text-purple-300"></i>
+      <div>
+        <h1 class="text-xl font-semibold text-white">Subdomain Creator</h1>
+        <p class="text-xs text-purple-200">Powered by Reseller Gaming Programmer</p>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form id="form" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-purple-200 mb-1">Subdomain</label>
+        <div class="flex rounded-lg shadow-sm">
+          <input id="host" type="text" placeholder="myapp" required
+                 class="flex-1 min-w-0 px-3 py-2.5 bg-white/10 border border-white/20 text-white placeholder-purple-300/60 focus:ring-2 focus:ring-purple-400 focus:border-purple-400 sm:text-sm rounded-l-md" />
+          <span class="inline-flex items-center px-3 bg-white/10 border-t border-b border-l-0 border-r border-white/20 text-purple-200 text-sm rounded-r-md">.panelwota.my.id</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-purple-200 mb-1">IP Address</label>
+        <input id="ip" type="text" pattern="^(\d{1,3}\.){3}\d{1,3}$" placeholder="192.0.2.123" required
+               class="w-full px-3 py-2.5 bg-white/10 border border-white/20 text-white placeholder-purple-300/60 focus:ring-2 focus:ring-purple-400 focus:border-purple-400 sm:text-sm rounded-md" />
+      </div>
+
+      <button id="btn" type="submit"
+              class="w-full flex items-center justify-center bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-semibold py-2.5 rounded-md transition">
+        <i data-feather="plus-circle" class="w-4 h-4 mr-2"></i>
+        <span id="btnTxt">Buat Subdomain</span>
+      </button>
+    </form>
+
+    <!-- Loading -->
+    <div id="loader" class="hidden flex justify-center">
+      <lottie-player src="https://assets5.lottiefiles.com/packages/lf20_usmfx6bp.json" background="transparent" speed="1" style="width:80px;height:80px" loop autoplay></lottie-player>
+    </div>
+
+    <!-- Result -->
+    <div id="result" class="hidden text-sm text-center rounded-md p-3"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="text-center text-purple-300/50 text-xs mt-6">
+    © 2024 Reseller Gaming Programmer – All rights reserved.
+  </footer>
+
+  <script>
+    // ===== CONFIG (ubah sesuai akun Anda) =====
+    const ZONE_ID   = "5d25eb7e2d360ab662e7011a0787ef44";                 // ← Zone ID Cloudflare
+    const API_TOKEN = "jOSusHUHiuJLtDilyjML1F2DUAirOI9RkXOmgP17"; // ← API Token Cloudflare
+    const DOMAIN    = "panelwota.my.id";               // ← Nama domain Anda
+    // ==========================================
+
+    const form   = document.getElementById("form");
+    const btn    = document.getElementById("btn");
+    const btnTxt = document.getElementById("btnTxt");
+    const loader = document.getElementById("loader");
+    const result = document.getElementById("result");
+
+    const toggleLoader = on => {
+      loader.classList.toggle("hidden", !on);
+      btn.disabled = on;
+      btnTxt.textContent = on ? "Memproses..." : "Buat Subdomain";
+    };
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const host = document.getElementById("host").value.trim();
+      const ip   = document.getElementById("ip").value.trim();
+
+      toggleLoader(true);
+      result.classList.add("hidden");
+
+      try {
+        const { data } = await axios.post(
+          `https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records`,
+          {
+            type: "A",
+            name: host.replace(/[^a-z0-9.-]/gi, "") + "." + DOMAIN,
+            content: ip.replace(/[^0-9.]/gi, ""),
+            ttl: 3600,
+            proxied: false
+          },
+          { headers: { Authorization: API_TOKEN, "Content-Type": "application/json" } }
+        );
+
+        result.textContent = `✅ ${host}.${DOMAIN} → ${ip}`;
+        result.className = "text-sm text-center rounded-md p-3 bg-green-500/20 text-green-200";
+        form.reset();
+      } catch (err) {
+        const msg = err.response?.data?.errors?.[0]?.message || err.message || "Unknown error";
+        result.textContent = `❌ ${msg}`;
+        result.className = "text-sm text-center rounded-md p-3 bg-red-500/20 text-red-200";
+      } finally {
+        toggleLoader(false);
+        result.classList.remove("hidden");
+      }
+    });
+
+    feather.replace();
+  </script>
+</body>
+                                               </html>
